@@ -19,13 +19,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import ua.edu.mobile.smartlife.data.AppContainer
 import ua.edu.mobile.smartlife.ui.auth.LoginScreen
 import ua.edu.mobile.smartlife.ui.components.AddRecordDialog
 import ua.edu.mobile.smartlife.ui.home.HomeScreen
@@ -33,19 +31,15 @@ import ua.edu.mobile.smartlife.ui.profile.ProfileScreen
 import ua.edu.mobile.smartlife.ui.records.RecordDetailsScreen
 import ua.edu.mobile.smartlife.ui.records.RecordsScreen
 import ua.edu.mobile.smartlife.ui.records.RecordsViewModel
-import ua.edu.mobile.smartlife.ui.records.RecordsViewModelFactory
 import ua.edu.mobile.smartlife.ui.statistics.StatisticsScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun SmartLifeApp() {
 
     val navController = rememberNavController()
 
-    val appContainer = remember { AppContainer() }
-
-    val recordsViewModel: RecordsViewModel = viewModel(
-        factory = RecordsViewModelFactory(appContainer.recordRepository)
-    )
+    val recordsViewModel: RecordsViewModel = hiltViewModel()
 
     val records by recordsViewModel.records.collectAsStateWithLifecycle(
         initialValue = emptyList()

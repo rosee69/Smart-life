@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.map
 import ua.edu.mobile.smartlife.data.model.FakeData
 import ua.edu.mobile.smartlife.data.model.HealthRecord
 import ua.edu.mobile.smartlife.data.model.RecordType
+import javax.inject.Inject
 
-class InMemoryRecordRepository : RecordRepository {
+class InMemoryRecordRepository @Inject constructor() : RecordRepository {
 
     private val records = MutableStateFlow(FakeData.records)
 

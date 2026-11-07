@@ -12,11 +12,13 @@ import kotlinx.coroutines.launch
 import ua.edu.mobile.smartlife.data.model.HealthRecord
 import ua.edu.mobile.smartlife.data.model.RecordType
 import ua.edu.mobile.smartlife.data.repository.RecordRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class RecordsViewModel(
+@HiltViewModel
+class RecordsViewModel @Inject constructor(
     private val repository: RecordRepository
 ) : ViewModel() {
-
     private val _selectedType = MutableStateFlow<RecordType?>(null)
     val selectedType: StateFlow<RecordType?> = _selectedType.asStateFlow()
 
