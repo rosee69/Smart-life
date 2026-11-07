@@ -8,11 +8,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.SentimentSatisfied
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,24 +24,35 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ua.edu.mobile.smartlife.data.model.FakeData
+import kotlinx.coroutines.launch
 import ua.edu.mobile.smartlife.data.model.HealthRecord
 import ua.edu.mobile.smartlife.data.model.RecordType
-import androidx.compose.material.icons.filled.SentimentSatisfied
 
 private val accentColor = Color(0xFFF600BE)
-private val cardColor = Color(0xFFE8E5EE)
+private val cardColor = Color(0xFFF3EFF7)
 private val iconBackground = Color(0xFFF0B8EA)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordsScreen(
-    records: List<HealthRecord> = FakeData.records,
-    onRecordClick: (Long) -> Unit = {},
-    onAddRecord: () -> Unit = {}
+    records: List<HealthRecord>,
+    selectedType: RecordType?,
+    onFilterChange: (RecordType?) -> Unit,
+    onRecordClick: (Long) -> Unit,
+    onAddRecord: () -> Unit,
+    onDeleteRecord: (Long) -> Unit,
+    onUndoDelete: () -> Unit
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     Scaffold(
         containerColor = Color(0xFFFFF7FC),
+
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
+
         topBar = {
             TopAppBar(
                 title = {
@@ -48,40 +63,111 @@ fun RecordsScreen(
                 )
             )
         },
+
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddRecord,
                 containerColor = Color(0xFFF0B8EA),
-                contentColor = Color(0xFFF600BE)
+                contentColor = accentColor
             ) {
                 Text("+", fontSize = 26.sp)
             }
         }
     ) { innerPadding ->
 
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(
-                start = 12.dp,
-                end = 12.dp,
-                top = 8.dp,
-                bottom = 16.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(innerPadding)
         ) {
-            items(
-                items = records,
-                key = { it.id }
-            ) { record ->
 
-                RecordCard(
-                    record = record,
-                    onClick = {
-                        onRecordClick(record.id)
-                    }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilterChip(
+                    selected = selectedType == null,
+                    onClick = { onFilterChange(null) },
+                    label = { Text("Усі") }
                 )
+
+                FilterChip(
+                    selected = selectedType == RecordType.WATER,
+                    onClick = { onFilterChange(RecordType.WATER) },
+                    label = { Text("Вода") }
+                )
+
+                FilterChip(
+                    selected = selectedType == RecordType.PULSE,
+                    onClick = { onFilterChange(RecordType.PULSE) },
+                    label = { Text("Пульс") }
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilterChip(
+                    selected = selectedType == RecordType.SLEEP,
+                    onClick = { onFilterChange(RecordType.SLEEP) },
+                    label = { Text("Сон") }
+                )
+
+                FilterChip(
+                    selected = selectedType == RecordType.WEIGHT,
+                    onClick = { onFilterChange(RecordType.WEIGHT) },
+                    label = { Text("Вага") }
+                )
+
+                FilterChip(
+                    selected = selectedType == RecordType.MOOD,
+                    onClick = { onFilterChange(RecordType.MOOD) },
+                    label = { Text("Настрій") }
+                )
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp),
+                contentPadding = PaddingValues(
+                    top = 8.dp,
+                    bottom = 16.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(
+                    items = records,
+                    key = { it.id }
+                ) { record ->
+
+                    RecordCard(
+                        record = record,
+                        onClick = {
+                            onRecordClick(record.id)
+                        },
+                        onDelete = {
+                            onDeleteRecord(record.id)
+
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Запис видалено",
+                                    actionLabel = "Скасувати",
+                                    withDismissAction = true
+                                )
+
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    onUndoDelete()
+                                }
+                            }
+                        }
+                    )
+                }
             }
         }
     }
@@ -90,7 +176,8 @@ fun RecordsScreen(
 @Composable
 private fun RecordCard(
     record: HealthRecord,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val title = when (record.type) {
         RecordType.WATER -> "Вода"
@@ -132,14 +219,10 @@ private fun RecordCard(
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .background(
-                        color = iconBackground,
-                        shape = CircleShape
-                    ),
+                    .background(iconBackground, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -181,6 +264,14 @@ private fun RecordCard(
                 fontWeight = FontWeight.Bold,
                 color = accentColor
             )
+
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Видалити запис",
+                    tint = Color.Gray
+                )
+            }
         }
     }
 }

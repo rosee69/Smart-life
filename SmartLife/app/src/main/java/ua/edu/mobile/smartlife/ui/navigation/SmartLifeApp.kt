@@ -3,10 +3,10 @@ package ua.edu.mobile.smartlife.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -14,24 +14,26 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-
-import ua.edu.mobile.smartlife.data.model.FakeData
-import ua.edu.mobile.smartlife.data.model.HealthRecord
+import ua.edu.mobile.smartlife.data.AppContainer
 import ua.edu.mobile.smartlife.ui.auth.LoginScreen
+import ua.edu.mobile.smartlife.ui.components.AddRecordDialog
 import ua.edu.mobile.smartlife.ui.home.HomeScreen
 import ua.edu.mobile.smartlife.ui.profile.ProfileScreen
 import ua.edu.mobile.smartlife.ui.records.RecordDetailsScreen
 import ua.edu.mobile.smartlife.ui.records.RecordsScreen
-import ua.edu.mobile.smartlife.ui.components.AddRecordDialog
+import ua.edu.mobile.smartlife.ui.records.RecordsViewModel
+import ua.edu.mobile.smartlife.ui.records.RecordsViewModelFactory
 import ua.edu.mobile.smartlife.ui.statistics.StatisticsScreen
 
 @Composable
@@ -39,11 +41,17 @@ fun SmartLifeApp() {
 
     val navController = rememberNavController()
 
-    val records = remember {
-        mutableStateListOf<HealthRecord>().apply {
-            addAll(FakeData.records)
-        }
-    }
+    val appContainer = remember { AppContainer() }
+
+    val recordsViewModel: RecordsViewModel = viewModel(
+        factory = RecordsViewModelFactory(appContainer.recordRepository)
+    )
+
+    val records by recordsViewModel.records.collectAsStateWithLifecycle(
+        initialValue = emptyList()
+    )
+
+    val selectedType by recordsViewModel.selectedType.collectAsStateWithLifecycle()
 
     var showAddRecordDialog by remember {
         mutableStateOf(false)
@@ -86,9 +94,7 @@ fun SmartLifeApp() {
                                 contentDescription = "Головна"
                             )
                         },
-                        label = {
-                            Text("Головна")
-                        }
+                        label = { Text("Головна") }
                     )
 
                     NavigationBarItem(
@@ -104,9 +110,7 @@ fun SmartLifeApp() {
                                 contentDescription = "Журнал"
                             )
                         },
-                        label = {
-                            Text("Журнал")
-                        }
+                        label = { Text("Журнал") }
                     )
 
                     NavigationBarItem(
@@ -122,9 +126,7 @@ fun SmartLifeApp() {
                                 contentDescription = "Статистика"
                             )
                         },
-                        label = {
-                            Text("Статистика")
-                        }
+                        label = { Text("Статистика") }
                     )
 
                     NavigationBarItem(
@@ -140,9 +142,7 @@ fun SmartLifeApp() {
                                 contentDescription = "Профіль"
                             )
                         },
-                        label = {
-                            Text("Профіль")
-                        }
+                        label = { Text("Профіль") }
                     )
                 }
             }
@@ -152,7 +152,7 @@ fun SmartLifeApp() {
         NavHost(
             navController = navController,
             startDestination = LoginRoute,
-            modifier = androidx.compose.ui.Modifier.padding(innerPadding)
+            modifier = Modifier.padding(innerPadding)
         ) {
 
             composable<LoginRoute> {
@@ -174,9 +174,7 @@ fun SmartLifeApp() {
                 HomeScreen(
                     records = records,
                     onRecordClick = { recordId ->
-                        navController.navigate(
-                            RecordDetailsRoute(recordId)
-                        )
+                        navController.navigate(RecordDetailsRoute(recordId))
                     },
                     onAddRecord = {
                         showAddRecordDialog = true
@@ -187,13 +185,21 @@ fun SmartLifeApp() {
             composable<RecordsRoute> {
                 RecordsScreen(
                     records = records,
+                    selectedType = selectedType,
+                    onFilterChange = { type ->
+                        recordsViewModel.setFilter(type)
+                    },
                     onRecordClick = { recordId ->
-                        navController.navigate(
-                            RecordDetailsRoute(recordId)
-                        )
+                        navController.navigate(RecordDetailsRoute(recordId))
                     },
                     onAddRecord = {
                         showAddRecordDialog = true
+                    },
+                    onDeleteRecord = { recordId ->
+                        recordsViewModel.deleteRecord(recordId)
+                    },
+                    onUndoDelete = {
+                        recordsViewModel.undoDelete()
                     }
                 )
             }
@@ -240,19 +246,11 @@ fun SmartLifeApp() {
                     showAddRecordDialog = false
                 },
                 onSave = { type, value, note ->
-                    val newId = (records.maxOfOrNull {
-                        it.id
-                    } ?: 0L) + 1L
-
-                    records.add(
-                        HealthRecord(
-                            id = newId,
-                            type = type,
-                            value = value,
-                            note = note
-                        )
+                    recordsViewModel.addRecord(
+                        type = type,
+                        value = value,
+                        note = note
                     )
-
                     showAddRecordDialog = false
                 }
             )
