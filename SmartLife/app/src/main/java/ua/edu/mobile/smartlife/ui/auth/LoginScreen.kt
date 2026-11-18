@@ -37,7 +37,9 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
 
     val tealColor = Color(0xFFF600BE)
-    val backgroundColor = Color(0xFFFFF7FC)
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(
         modifier = Modifier
@@ -99,7 +101,7 @@ fun LoginScreen(
             text = "Smart Life",
             fontSize = 25.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black
+            color = textColor
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -107,7 +109,7 @@ fun LoginScreen(
         Text(
             text = "Персональний моніторинг здоров'я",
             fontSize = 14.sp,
-            color = Color.DarkGray
+            color = secondaryTextColor
         )
 
         Spacer(modifier = Modifier.height(28.dp))
@@ -129,8 +131,15 @@ fun LoginScreen(
             },
             shape = RoundedCornerShape(6.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                focusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 focusedBorderColor = tealColor,
-                unfocusedBorderColor = Color.Gray
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                cursorColor = tealColor
             )
         )
 
@@ -174,8 +183,15 @@ fun LoginScreen(
             },
             shape = RoundedCornerShape(6.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                focusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 focusedBorderColor = tealColor,
-                unfocusedBorderColor = Color.Gray
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                cursorColor = tealColor
             )
         )
 

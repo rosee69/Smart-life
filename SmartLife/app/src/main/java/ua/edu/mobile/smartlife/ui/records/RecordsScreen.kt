@@ -1,6 +1,8 @@
 
 package ua.edu.mobile.smartlife.ui.records
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,12 +17,14 @@ import androidx.compose.material.icons.filled.SentimentSatisfied
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,8 +33,6 @@ import ua.edu.mobile.smartlife.data.model.HealthRecord
 import ua.edu.mobile.smartlife.data.model.RecordType
 
 private val accentColor = Color(0xFFF600BE)
-private val cardColor = Color(0xFFF3EFF7)
-private val iconBackground = Color(0xFFF0B8EA)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,13 +43,39 @@ fun RecordsScreen(
     onRecordClick: (Long) -> Unit,
     onAddRecord: () -> Unit,
     onDeleteRecord: (Long) -> Unit,
-    onUndoDelete: () -> Unit
+    onUndoDelete: () -> Unit,
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    exportedFileUri: Uri?,
+    onExportRecords: () -> Unit,
+    onExportHandled: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val cardColor = MaterialTheme.colorScheme.surface
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    LaunchedEffect(exportedFileUri) {
+        exportedFileUri?.let { uri ->
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            context.startActivity(
+                Intent.createChooser(shareIntent, "Поділитися CSV-файлом")
+            )
+
+            onExportHandled()
+        }
+    }
 
     Scaffold(
-        containerColor = Color(0xFFFFF7FC),
+        containerColor = backgroundColor,
 
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
@@ -56,10 +84,10 @@ fun RecordsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Журнал показників")
+                    Text("Журнал показників (${records.size})")
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFFFF7FC)
+                    containerColor = backgroundColor,
                 )
             )
         },
@@ -74,12 +102,40 @@ fun RecordsScreen(
             }
         }
     ) { innerPadding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                placeholder = {
+                    Text("Пошук за нотатками")
+                },
+                singleLine = true,
+                shape = MaterialTheme.shapes.large,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = accentColor,
+                    cursorColor = accentColor
+                )
+            )
+
+            Button(
+                onClick = onExportRecords,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = accentColor,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Експорт CSV")
+            }
 
             Row(
                 modifier = Modifier
@@ -145,7 +201,6 @@ fun RecordsScreen(
                     items = records,
                     key = { it.id }
                 ) { record ->
-
                     RecordCard(
                         record = record,
                         onClick = {
@@ -202,6 +257,15 @@ private fun RecordCard(
         RecordType.WEIGHT -> "${record.value} кг"
         RecordType.MOOD -> "Настрій"
     }
+    val cardColor = MaterialTheme.colorScheme.surface
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val isDarkTheme = MaterialTheme.colorScheme.background != Color(0xFFFFF7FC)
+    val iconBackground = if (isDarkTheme) {
+        Color(0xFF493047)
+    } else {
+        Color(0xFFF0B8EA)
+    }
 
     Card(
         modifier = Modifier
@@ -248,13 +312,13 @@ private fun RecordCard(
                 Text(
                     text = record.dateTime,
                     fontSize = 9.sp,
-                    color = Color.Gray
+                    color = secondaryTextColor
                 )
 
                 Text(
                     text = record.note,
                     fontSize = 10.sp,
-                    color = Color.DarkGray
+                    color = textColor
                 )
             }
 

@@ -24,11 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
 import ua.edu.mobile.smartlife.data.model.RecordType
 
 private val accentColor = Color(0xFFF600BE)
-private val selectedColor = Color(0xFFF0B8EA)
-private val chipColor = Color(0xFFF3EFF7)
 
 @Composable
 fun AddRecordDialog(
@@ -214,7 +213,7 @@ fun AddRecordDialog(
                 )
             }
         },
-        containerColor = Color(0xFFFFF7FC)
+        containerColor = MaterialTheme.colorScheme.surface
     )
 }
 
@@ -239,16 +238,16 @@ private fun RecordTypeChip(
             )
         },
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = chipColor,
-            labelColor = Color.DarkGray,
-            iconColor = accentColor,
-            selectedContainerColor = selectedColor,
-            selectedLabelColor = accentColor,
-            selectedLeadingIconColor = accentColor
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            labelColor = MaterialTheme.colorScheme.onSurface,
+            iconColor = MaterialTheme.colorScheme.primary,
+            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            selectedLeadingIconColor = MaterialTheme.colorScheme.primary
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = accentColor
+            color = MaterialTheme.colorScheme.primary
         )
     )
 }

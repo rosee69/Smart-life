@@ -10,6 +10,8 @@ interface RecordRepository {
 
     fun observeRecordsByType(type: RecordType?): Flow<List<HealthRecord>>
 
+    fun searchRecords(query: String): Flow<List<HealthRecord>>
+
     suspend fun addRecord(record: HealthRecord)
 
     suspend fun updateRecord(record: HealthRecord)

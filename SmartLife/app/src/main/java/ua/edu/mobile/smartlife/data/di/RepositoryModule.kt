@@ -4,7 +4,7 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import ua.edu.mobile.smartlife.data.repository.InMemoryRecordRepository
+import ua.edu.mobile.smartlife.data.repository.RoomRecordRepository
 import ua.edu.mobile.smartlife.data.repository.RecordRepository
 import javax.inject.Singleton
 
@@ -15,6 +15,6 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindRecordRepository(
-        repository: InMemoryRecordRepository
+        repository: RoomRecordRepository
     ): RecordRepository
 }

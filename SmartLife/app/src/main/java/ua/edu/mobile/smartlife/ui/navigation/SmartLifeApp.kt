@@ -32,6 +32,7 @@ import ua.edu.mobile.smartlife.ui.records.RecordDetailsScreen
 import ua.edu.mobile.smartlife.ui.records.RecordsScreen
 import ua.edu.mobile.smartlife.ui.records.RecordsViewModel
 import ua.edu.mobile.smartlife.ui.statistics.StatisticsScreen
+import ua.edu.mobile.smartlife.ui.profile.SettingsViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
@@ -41,11 +42,19 @@ fun SmartLifeApp() {
 
     val recordsViewModel: RecordsViewModel = hiltViewModel()
 
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+
+    val userSettings by settingsViewModel.userSettings.collectAsStateWithLifecycle()
+
     val records by recordsViewModel.records.collectAsStateWithLifecycle(
         initialValue = emptyList()
     )
 
+    val allRecords by recordsViewModel.allRecords.collectAsStateWithLifecycle(initialValue = emptyList())
+
     val selectedType by recordsViewModel.selectedType.collectAsStateWithLifecycle()
+
+    val searchQuery by recordsViewModel.searchQuery.collectAsStateWithLifecycle()
 
     var showAddRecordDialog by remember {
         mutableStateOf(false)
@@ -166,22 +175,33 @@ fun SmartLifeApp() {
 
             composable<HomeRoute> {
                 HomeScreen(
-                    records = records,
+                    records = allRecords,
+                    userName = userSettings.userName,
+                    dailyWaterGoal = userSettings.dailyWaterGoal,
                     onRecordClick = { recordId ->
                         navController.navigate(RecordDetailsRoute(recordId))
                     },
                     onAddRecord = {
                         showAddRecordDialog = true
+                    } ,
+                    onAddWaterGlass = {
+                        recordsViewModel.addWaterGlass()
                     }
                 )
             }
 
             composable<RecordsRoute> {
+                val exportedFileUri by recordsViewModel.exportedFileUri.collectAsStateWithLifecycle()
+
                 RecordsScreen(
                     records = records,
                     selectedType = selectedType,
                     onFilterChange = { type ->
                         recordsViewModel.setFilter(type)
+                    },
+                    searchQuery = searchQuery,
+                    onSearchChange = { query ->
+                        recordsViewModel.searchRecords(query)
                     },
                     onRecordClick = { recordId ->
                         navController.navigate(RecordDetailsRoute(recordId))
@@ -194,9 +214,17 @@ fun SmartLifeApp() {
                     },
                     onUndoDelete = {
                         recordsViewModel.undoDelete()
+                    },
+                    exportedFileUri = exportedFileUri,
+                    onExportRecords = {
+                        recordsViewModel.exportRecords()
+                    },
+                    onExportHandled = {
+                        recordsViewModel.clearExportedFileUri()
                     }
                 )
             }
+
 
             composable<RecordDetailsRoute> { backStackEntry ->
                 val route = backStackEntry.toRoute<RecordDetailsRoute>()
@@ -215,8 +243,16 @@ fun SmartLifeApp() {
                 }
             }
 
+
             composable<ProfileRoute> {
+                val settingsViewModel: SettingsViewModel = hiltViewModel()
+                val userSettings by settingsViewModel.userSettings.collectAsStateWithLifecycle()
+
                 ProfileScreen(
+                    userSettings = userSettings,
+                    onUserNameChange = { settingsViewModel.updateUserName(it) },
+                    onThemeChange = { settingsViewModel.updateTheme(it) },
+                    onWaterGoalChange = { settingsViewModel.updateDailyWaterGoal(it) },
                     onLogout = {
                         navController.navigate(LoginRoute) {
                             popUpTo(navController.graph.id) {
@@ -226,6 +262,7 @@ fun SmartLifeApp() {
                     }
                 )
             }
+
 
             composable<StatisticsRoute> {
                 StatisticsScreen(
