@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 
 private val Context.dataStore by preferencesDataStore(
     name = "user_settings"
@@ -23,6 +24,7 @@ class SettingsRepository @Inject constructor(
         val USER_NAME = stringPreferencesKey("user_name")
         val THEME = stringPreferencesKey("theme")
         val DAILY_WATER_GOAL = intPreferencesKey("daily_water_goal")
+        val WEATHER_CACHE = stringPreferencesKey("weather_cache")
     }
 
     val userSettings: Flow<UserSettings> =
@@ -50,5 +52,15 @@ class SettingsRepository @Inject constructor(
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.DAILY_WATER_GOAL] = goal
         }
+    }
+
+    suspend fun saveWeatherCache(weatherJson: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.WEATHER_CACHE] = weatherJson
+        }
+    }
+
+    suspend fun getWeatherCache(): String? {
+        return context.dataStore.data.first()[PreferencesKeys.WEATHER_CACHE]
     }
 }

@@ -34,6 +34,8 @@ import ua.edu.mobile.smartlife.ui.records.RecordsViewModel
 import ua.edu.mobile.smartlife.ui.statistics.StatisticsScreen
 import ua.edu.mobile.smartlife.ui.profile.SettingsViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.LaunchedEffect
+import ua.edu.mobile.smartlife.ui.home.HomeViewModel
 
 @Composable
 fun SmartLifeApp() {
@@ -174,7 +176,17 @@ fun SmartLifeApp() {
             }
 
             composable<HomeRoute> {
+                val homeViewModel: HomeViewModel = hiltViewModel()
+
+                val weatherState by homeViewModel.weatherState
+                    .collectAsStateWithLifecycle()
+
+                LaunchedEffect(Unit) {
+                    homeViewModel.loadWeather()
+                }
+
                 HomeScreen(
+                    weatherState = weatherState,
                     records = allRecords,
                     userName = userSettings.userName,
                     dailyWaterGoal = userSettings.dailyWaterGoal,
@@ -183,7 +195,7 @@ fun SmartLifeApp() {
                     },
                     onAddRecord = {
                         showAddRecordDialog = true
-                    } ,
+                    },
                     onAddWaterGlass = {
                         recordsViewModel.addWaterGlass()
                     }

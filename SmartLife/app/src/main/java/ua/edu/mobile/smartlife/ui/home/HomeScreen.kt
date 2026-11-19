@@ -29,6 +29,7 @@ private val AccentColor = Color(0xFFF600BE)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    weatherState: WeatherUiState = WeatherUiState.Loading,
     records: List<HealthRecord> = FakeData.records,
     userName: String = "",
     dailyWaterGoal: Int = 2000,
@@ -132,6 +133,10 @@ fun HomeScreen(
                         color = Color.Gray
                     )
                 }
+            }
+
+            item {
+                WeatherCard(state = weatherState)
             }
 
             item {
