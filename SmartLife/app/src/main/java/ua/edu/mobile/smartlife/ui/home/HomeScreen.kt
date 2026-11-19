@@ -19,23 +19,52 @@ import ua.edu.mobile.smartlife.data.model.FakeData
 import ua.edu.mobile.smartlife.data.model.HealthRecord
 import ua.edu.mobile.smartlife.data.model.RecordType
 import ua.edu.mobile.smartlife.ui.components.AboutAppDialog
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.foundation.shape.CircleShape
 
 private val AccentColor = Color(0xFFF600BE)
-private val CardColor = Color(0xFFF1EDF7)
-private val ScreenColor = Color(0xFFFFF7FC)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    weatherState: WeatherUiState = WeatherUiState.Loading,
     records: List<HealthRecord> = FakeData.records,
+    userName: String = "",
+    dailyWaterGoal: Int = 2000,
     onRecordClick: (Long) -> Unit = {},
-    onAddRecord: () -> Unit = {}
+    onAddRecord: () -> Unit = {},
+    onAddWaterGlass: () -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    val today = remember {
+        SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Date())
+    }
+
+    val todayRecords = records.filter {
+        it.dateTime.startsWith(today)
+    }
+
+    val waterAmount = todayRecords
+        .filter { it.type == RecordType.WATER }
+        .sumOf { it.value }
+
+    val latestPulse = records
+        .filter { it.type == RecordType.PULSE }
+        .maxByOrNull { it.id }
+
+    val latestSleep = records
+        .filter { it.type == RecordType.SLEEP }
+        .maxByOrNull { it.id }
+
+    val latestWeight = records
+        .filter { it.type == RecordType.WEIGHT }
+        .maxByOrNull { it.id }
 
     Scaffold(
-        containerColor = ScreenColor,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -67,7 +96,7 @@ fun HomeScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = ScreenColor
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
@@ -89,7 +118,11 @@ fun HomeScreen(
             item {
                 Column {
                     Text(
-                        text = "Вітаю, Вікторія!",
+                        text = if (userName.isBlank()) {
+                            "Вітаю!"
+                        } else {
+                            "Вітаю, $userName!"
+                        },
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -103,23 +136,68 @@ fun HomeScreen(
             }
 
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SummaryCard(
-                        title = "Вода",
-                        value = "0.5 л",
-                        icon = Icons.Default.WaterDrop,
-                        modifier = Modifier.weight(1f)
-                    )
+                WeatherCard(state = weatherState)
+            }
 
-                    SummaryCard(
-                        title = "Пульс",
-                        value = "84",
-                        icon = Icons.Default.Favorite,
-                        modifier = Modifier.weight(1f)
+            item {
+                val progress = if (dailyWaterGoal > 0) {
+                    (waterAmount / (dailyWaterGoal / 1000.0))
+                        .toFloat()
+                        .coerceIn(0f, 1f)
+                } else {
+                    0f
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.WaterDrop,
+                                contentDescription = null,
+                                tint = AccentColor
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = "Вода: ${"%.2f".format(waterAmount)} з ${"%.2f".format(dailyWaterGoal / 1000.0)} л",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                            color = AccentColor,
+                            trackColor = Color(0xFFF0B8EA)
+                        )
+
+                        Button(
+                            onClick = onAddWaterGlass,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFF0B8EA),
+                                contentColor = AccentColor
+                            ),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Склянка води (0.25 л)")
+                        }
+                    }
                 }
             }
 
@@ -129,20 +207,28 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     SummaryCard(
+                        title = "Пульс",
+                        value = latestPulse?.let { "${it.value.toInt()} уд/хв" } ?: "—",
+                        icon = Icons.Default.Favorite,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    SummaryCard(
                         title = "Сон",
-                        value = "7.5 год",
+                        value = latestSleep?.let { "${it.value} год" } ?: "—",
                         icon = Icons.Default.Bedtime,
                         modifier = Modifier.weight(1f)
                     )
 
                     SummaryCard(
                         title = "Вага",
-                        value = "55.2 кг",
+                        value = latestWeight?.let { "${it.value} кг" } ?: "—",
                         icon = Icons.Default.MonitorWeight,
                         modifier = Modifier.weight(1f)
                     )
                 }
             }
+
 
             item {
                 Row(
@@ -195,22 +281,30 @@ private fun SummaryCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.height(90.dp),
+        modifier = modifier.heightIn(min = 105.dp),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardColor
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
             modifier = Modifier.padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = AccentColor,
-                modifier = Modifier.size(20.dp)
-            )
+            Surface(
+                modifier = Modifier.size(32.dp),
+                shape = CircleShape,
+                color = Color(0xFFF0B8EA)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = AccentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
 
             Text(
                 text = title,
@@ -220,7 +314,7 @@ private fun SummaryCard(
 
             Text(
                 text = value,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -261,7 +355,7 @@ private fun RecordCard(
         onClick = onClick,
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardColor
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
@@ -301,12 +395,12 @@ private fun RecordCard(
                 Text(
                     text = record.dateTime,
                     fontSize = 9.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = record.note,
                     fontSize = 10.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
