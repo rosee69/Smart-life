@@ -28,6 +28,12 @@ class InMemoryRecordRepository @Inject constructor() : RecordRepository {
         }
     }
 
+    override fun searchRecords(query: String): Flow<List<HealthRecord>> {
+        return records.map { list ->
+            list.filter { it.note.contains(query, ignoreCase = true) }
+        }
+    }
+
     override suspend fun addRecord(record: HealthRecord) {
         records.value = records.value + record
     }

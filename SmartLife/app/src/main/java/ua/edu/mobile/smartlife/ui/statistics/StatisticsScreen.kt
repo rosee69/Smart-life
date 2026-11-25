@@ -23,11 +23,7 @@ import androidx.compose.ui.unit.dp
 import ua.edu.mobile.smartlife.data.model.FakeData
 import ua.edu.mobile.smartlife.data.model.HealthRecord
 import ua.edu.mobile.smartlife.data.model.RecordType
-
-private val BackgroundColor = Color(0xFFFFF7FC)
-private val CardColor = Color(0xFFF3EFF7)
 private val AccentColor = Color(0xFFF600BE)
-private val IconBackground = Color(0xFFFCE0F4)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,16 +39,17 @@ fun StatisticsScreen(
     )
 
     val totalRecords = records.size
+    val backgroundColor = MaterialTheme.colorScheme.background
 
     Scaffold(
-        containerColor = BackgroundColor,
+        containerColor = backgroundColor,
         topBar = {
             TopAppBar(
                 title = {
                     Text("Статистика")
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BackgroundColor
+                    containerColor = backgroundColor
                 )
             )
         }
@@ -161,11 +158,16 @@ private fun StatisticsCard(
     average: Double?,
     modifier: Modifier = Modifier
 ) {
+    val cardColor = MaterialTheme.colorScheme.surface
+    val iconBackground = Color(0xFFF0B8EA)
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val secondaryTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardColor
+            containerColor = cardColor
         )
     ) {
         Column(
@@ -178,7 +180,7 @@ private fun StatisticsCard(
                 modifier = Modifier
                     .size(42.dp)
                     .background(
-                        color = IconBackground,
+                        color = iconBackground,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -200,7 +202,7 @@ private fun StatisticsCard(
             Text(
                 text = "Записів",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.DarkGray
+                color = secondaryTextColor
             )
 
             Text(
@@ -215,7 +217,7 @@ private fun StatisticsCard(
                     "Середнє: ${String.format("%.1f", it)}"
                 } ?: "Поки немає даних",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.DarkGray
+                color = secondaryTextColor
             )
         }
     }
